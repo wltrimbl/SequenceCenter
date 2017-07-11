@@ -1,0 +1,62 @@
+/* Title */
+.header {
+    box-shadow: 0 3px 3px #BBBBBB;
+    top: 0px;
+    padding-top: 10px;
+    position: fixed;
+    background-image: linear-gradient(to bottom, #222, #111);
+    background-color: #1b1b1b;
+    border-color: #252525;
+    background-repeat: repeat-x;
+    width: 100%;
+    z-index: 10000;
+}
+
+@media (max-width: 767px) {
+    .header {
+	position: absolute;
+        height: 105px;
+    }
+}
+
+/* Sidebar */
+.sidebar {
+    box-shadow: 4px 4px 4px #666666;
+    padding: 0;
+    border: 1px solid #DDDDDD;
+    border-radius: 4px;
+    overflow-y: auto;
+    padding-bottom: 10px;
+    background-color: white;
+}
+
+.glow{
+  animation: shadowThrob 0.9s 4;
+  animation-direction: alternate;
+  -webkit-animation: shadowThrob 0.9s ease-out 6;
+  -webkit-animation-direction: alternate;
+}
+@keyframes shadowThrob {
+  from {box-shadow: 0 0 20px rgba(12,65,190, 0.1);}
+  to {box-shadow: 0 0 20px rgba(12,65,190, 0.9);}
+}
+@-webkit-keyframes shadowThrob {
+  from {box-shadow: 0 0 20px rgba(12,65,190, 0.1);}
+  to {box-shadow: 0 0 20px rgba(12,65,190, 0.9);}
+}
+
+h3 {
+    font-weight: 300;
+}
+
+.box h4 {
+    font-weight: 300;
+}
+
+h4 {
+    font-weight: 300;
+}
+
+h5 {
+    font-weight: 300;
+}
