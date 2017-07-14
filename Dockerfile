@@ -40,5 +40,5 @@ COPY authServer/user.db /db/user.db
 RUN chmod a+w /db/user.db
 
 COPY authServer/. /usr/local/apache2/htdocs/authServer/
-COPY css images	index.html js widgets /usr/local/apache2/htdocs/SequenceCenter/
+COPY Retina css images	index.html js widgets /usr/local/apache2/htdocs/SequenceCenter/
 COPY httpd.conf /usr/local/apache2/conf/
