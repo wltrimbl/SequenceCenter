@@ -35,10 +35,6 @@ RUN apt-get install -y \
     
 ENV PERL_MM_USE_DEFAULT 1
 
-RUN mkdir -p /db && chmod a+w /db
-COPY authServer/user.db /db/user.db
-RUN chmod a+w /db/user.db
-
-COPY authServer/. /usr/local/apache2/htdocs/authServer/
-COPY Retina css images	index.html js widgets /usr/local/apache2/htdocs/SequenceCenter/
+COPY authServer /usr/local/apache2/htdocs/authServer/
+COPY . /usr/local/apache2/htdocs/SequenceCenter/
 COPY httpd.conf /usr/local/apache2/conf/
