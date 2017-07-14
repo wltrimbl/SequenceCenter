@@ -1,3 +1,6 @@
 [submodule "Retina"]
 	path = Retina
-	url = git@github.com:MG-RAST/Retina.git
+	url = https://github.com/MG-RAST/Retina.git
+[submodule "authServer"]
+	path = authServer
+	url = https://github.com/MG-RAST/authServer.git

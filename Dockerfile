@@ -39,7 +39,6 @@ RUN mkdir -p /db && chmod a+w /db
 COPY authServer/user.db /db/user.db
 RUN chmod a+w /db/user.db
 
-RUN mkdir -p /usr/local/apache2/htdocs/authServer /usr/local/apache2/htdocs/SequenceCenter
 COPY authServer/. /usr/local/apache2/htdocs/authServer/
-COPY SequenceCenter/. /usr/local/apache2/htdocs/SequenceCenter/
+COPY css images	index.html js widgets /usr/local/apache2/htdocs/SequenceCenter/
 COPY httpd.conf /usr/local/apache2/conf/
