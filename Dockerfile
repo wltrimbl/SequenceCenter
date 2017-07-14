@@ -36,4 +36,5 @@ RUN apt-get install -y \
 ENV PERL_MM_USE_DEFAULT 1
 
 COPY . /usr/local/apache2/htdocs/SequenceCenter/
+RUN ( cd /usr/local/apache2/htdocs ; ln -s SequenceCenter/authServer . )
 COPY httpd.conf /usr/local/apache2/conf/
