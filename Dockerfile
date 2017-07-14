@@ -35,6 +35,5 @@ RUN apt-get install -y \
     
 ENV PERL_MM_USE_DEFAULT 1
 
-COPY authServer /usr/local/apache2/htdocs/authServer/
 COPY . /usr/local/apache2/htdocs/SequenceCenter/
 COPY httpd.conf /usr/local/apache2/conf/
