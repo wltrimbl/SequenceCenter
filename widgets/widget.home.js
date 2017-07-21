@@ -216,12 +216,15 @@
 	}
 
 	var entries = [];
+	var url = RetinaConfig.shock_url + "/node/?query&download_url&archive=zip&";
 	if (dataType == 'project') {
 	    var node = widget.currentFiles[0].node ? widget.currentFiles[0].node : widget.currentFiles[0];
 	    entries.push(node.attributes.project_id+'|'+node.attributes.project);
+	    url += "project="+node.attributes.project+"&project_id="+node.attributes.project_id;
 	} else if (dataType == 'group') {
 	    var node = widget.currentFiles[0].node ? widget.currentFiles[0].node : widget.currentFiles[0];
 	    entries.push(node.attributes.project_id+'|'+node.attributes.group);
+	    url += "group="+node.attributes.group+"&project_id="+node.attributes.project_id;
 	} else {
 	    for (var i=0; i<widget.currentFiles.length; i++) {
 		var node = widget.currentFiles[i].node ? widget.currentFiles[i].node : widget.currentFiles[i];
@@ -229,26 +232,38 @@
 	    }
 	}
 
-	for (var i=0; i<entries.length; i++) {
-	    jQuery.ajax({ url: RetinaConfig.auth_url + "?action=modrights&email="+email+"&type="+dataType+"&item="+entries[i]+"&view=1&edit="+(assign ? "1&add=1" : "0")+"&owner="+(shareType == "admin" ? 1 : 0),
-			  dataType: "json",
-			  item: dataType=='project' ? entries[i] : (widget.currentFiles[i].node ? widget.currentFiles[i].node.file.name : widget.currentFiles[i].file.name),
-			  success: function(data) {
-			      var widget = Retina.WidgetInstances.home[1];
-
-			      var tar = document.getElementById('shareResult');
-			      if (! tar.innerHTML.length) {
-				  tar.innerHTML = "<div class='alert alert-info'></div>";
-			      }
-			      tar.firstChild.innerHTML += "<div>"+this.item+" shared.</div>";
-			  },
-			  error: function(jqXHR, error) {
-			      var widget = Retina.WidgetInstances.home[1];
-			  },
-			  crossDomain: true,
-			  headers: stm.authHeader
-			});
-	}
+	//for (var i=0; i<entries.length; i++) {
+	var i=0;
+	jQuery.ajax({ url: url,
+		      dataType: "json",
+		      success: function(data) {
+			  var widget = Retina.WidgetInstances.home[1];
+			  
+			  jQuery.ajax({ url: RetinaConfig.auth_url + "?action=modrights&pa="+data.data.url.substring(data.data.url.lastIndexOf('/'))+"&email="+email+"&type="+dataType+"&item="+entries[i]+"&view=1&edit="+(assign ? "1&add=1" : "0")+"&owner="+(shareType == "admin" ? 1 : 0),
+					dataType: "json",
+					item: dataType=='project' ? entries[i] : (widget.currentFiles[i].node ? widget.currentFiles[i].node.file.name : widget.currentFiles[i].file.name),
+					success: function(data) {
+					    var tar = document.getElementById('shareResult');
+					    if (! tar.innerHTML.length) {
+						tar.innerHTML = "<div class='alert alert-info'></div>";
+					    }
+					    tar.firstChild.innerHTML += "<div>"+this.item+" shared.</div>";
+					},
+					error: function(jqXHR, error) {
+					    var widget = Retina.WidgetInstances.home[1];
+					},
+					crossDomain: true,
+					headers: stm.authHeader
+				      });
+		      },
+		      error: function(jqXHR, error) {
+			  var widget = Retina.WidgetInstances.home[1];
+			  console.log(jqXHR.responseText);
+		      },
+		      crossDomain: true,
+		      headers: stm.authHeader
+		    });
+	//}
     };
 
     widget.projectSelected = function (entry) {
