@@ -54,7 +54,7 @@
 				      "detailType": "preview",
 				      "customPreview": widget.preview,
 				      "customMultiPreview": widget.multiPreview,
-				      "activateFolderfilterCallback": null,//widget.projectSelected,
+				      "activateFolderfilterCallback": null,
 				      "folderFilters": [ { "dropdown": false, "attribute": "project_id", "title": "run", "entries": entries, "filterable": true } ],    
 				      "presetFilters": { "owner": "ANL-SEQ-Core", "project_id": entries[0]  },
 				      "disableCustomFilter": true,
@@ -106,10 +106,26 @@
 		    
 		    if (stm.DataStore.hasOwnProperty('rights') && stm.DataStore.rights.length) {
 
-			var entries = [];
+			var projects = [];
+			var groups = [];
+			var files = [];
+			var presetFilters = null;
 			for (var i=0; i<stm.DataStore.rights.length; i++) {
 			    if (stm.DataStore.rights[i][0] == 'project') {
-				entries.push([stm.DataStore.rights[i][1].split(/\|/)[1],stm.DataStore.rights[i][1].split(/\|/)[1]+'&project_id='+stm.DataStore.rights[i][1].split(/\|/)[0]]);
+				projects.push([stm.DataStore.rights[i][1].split(/\|/)[1],stm.DataStore.rights[i][1].split(/\|/)[1]+'&project_id='+stm.DataStore.rights[i][1].split(/\|/)[0]]);
+				if (! presetFilters) {
+				    presetFilters = { "type": "run-folder-archive-fastq", "project": stm.DataStore.rights[i][1].split(/\|/)[1]+"&project_id="+stm.DataStore.rights[i][1].split(/\|/)[0] };
+				}
+			    } else if (stm.DataStore.rights[i][0] == "group") {
+				groups.push([stm.DataStore.rights[i][1].split(/\|/)[1],stm.DataStore.rights[i][1].split(/\|/)[1]+'&project_id='+stm.DataStore.rights[i][1].split(/\|/)[0]]);
+				if (! presetFilters) {
+				    presetFilters = { "type": "run-folder-archive-fastq", "group": stm.DataStore.rights[i][1].split(/\|/)[1]+"&project_id="+stm.DataStore.rights[i][1].split(/\|/)[0] };
+				}
+			    } else if (stm.DataStore.rights[i][0] == "file") {
+				files.push([stm.DataStore.rights[i][1].split(/\|/)[1],stm.DataStore.rights[i][1].split(/\|/)[1]+'&project_id='+stm.DataStore.rights[i][1].split(/\|/)[0]]);
+				if (! presetFilters) {
+				    presetFilters = { "type": "run-folder-archive-fastq", "name": stm.DataStore.rights[i][1].split(/\|/)[1]+"&project_id="+stm.DataStore.rights[i][1].split(/\|/)[0] };
+				}
 			    }
 			}
 			
@@ -129,11 +145,13 @@
 			    "showDetailBar": false,
 			    "requireLogin": true,
 			    "width": 1400,
-			    "folderFilters": [ { "dropdown": false, "attribute": "project", "title": "project", "entries": entries, "filterable": true } ],
+			    "folderFilters": [ { "dropdown": false, "attribute": "project", "title": "project", "entries": projects, "filterable": true, "active": null },
+					       { "dropdown": false, "attribute": "group", "title": "group", "entries": groups, "filterable": true, "active": null },
+					       { "dropdown": false, "attribute": "name", "title": "file", "entries": files, "filterable": true, "active": null } ],
 			    "detailType": "preview",
 			    "customPreview": widget.preview,
 			    "customMultiPreview": widget.multiPreview,
-			    "presetFilters": { "type": "run-folder-archive-fastq", "project": entries[0][1] },
+			    "presetFilters": presetFilters,
 			    "disableCustomFilter": true,
 			    "autoSizeAtStartup": true,
 			    "height": 730,
@@ -192,6 +210,7 @@
 	html.push('<li><input style="position: relative; bottom: 3px; margin-right: 5px;" type="radio" name="sharewhat" value="group" id="shareGroup">this group ('+atts.group+')</li>');
 	html.push('<li><input style="position: relative; bottom: 3px; margin-right: 5px;" type="radio" name="sharewhat" value="file" id="shareFile">the selected file'+(widget.currentFiles.length > 1 ? "s" : "")+'</li>');
 	html.push('</ul>');
+	html.push('<h4>Custom message</h4><textarea id="admin_message"></textarea>');
 	html.push('<h4>Who is the customer?</h4>');
 	html.push('<div class="input-append"><input type="text" placeholder="email address" id="shareEmail"><button class="btn" onclick="Retina.WidgetInstances.home[1].performShare(true);">share</button></div>');
 	html.push('</div>');
@@ -202,7 +221,7 @@
     widget.performShare = function (assign) {
 	var widget = this;
 
-	var dataType = document.getElementById('shareProject').checked ? "project" : (document.getElementById('shareProject').checked ? "group" : "file");
+	var dataType = document.getElementById('shareProject').checked ? "project" : (document.getElementById('shareGroup').checked ? "group" : "file");
 	var shareType = assign ? "admin": (document.getElementById('shareView').checked ? "view" : (document.getElementById('shareOnce').checked ? "once" : "admin"));
 	var email = document.getElementById('shareEmail').value;
 
@@ -226,88 +245,88 @@
 	    entries.push(node.attributes.project_id+'|'+node.attributes.group);
 	    url += "group="+node.attributes.group+"&project_id="+node.attributes.project_id;
 	} else {
+	    var ids = [];
+	    var fns = [];
+	    currentFileShareItems = [];
+	    var n = widget.currentFiles[0].node ? widget.currentFiles[0].node : widget.currentFiles[0];
+	    var item = n.attributes.project_id + '|';
 	    for (var i=0; i<widget.currentFiles.length; i++) {
 		var node = widget.currentFiles[i].node ? widget.currentFiles[i].node : widget.currentFiles[i];
-		entries.push(node.attributes.project_id+'|'+node.attributes.name);
+		ids.push(node.id);
+		currentFileShareItems.push(item+node.file.name);
+		fns.push(node.attributes.project_id+"|"+node.attributes.project+"|"+node.attributes.group+"|"+node.attributes.name);
 	    }
+	    var data = 'download_url=1&archive_format=zip&ids='+ids.join(",")+"&sharenames="+fns.join(",");
+	    jQuery.ajax({
+		method: "POST",
+		url: RetinaConfig.shock_url + "/node/",
+		data: data,
+		success: function(data) {
+		    var widget = Retina.WidgetInstances.home[1];
+		    var dynamic = RetinaConfig.shock_preauth+data.data.url.substring(data.data.url.lastIndexOf('/'));
+		    if (document.getElementById('admin_message') && document.getElementById('admin_message').value) {
+			dynamic += "%0A%0A"+encodeURIComponent(document.getElementById('admin_message').value);
+		    }
+		    jQuery.ajax({ url: RetinaConfig.auth_url + "?action=modrights&dynamic="+dynamic+"&email="+email+"&type="+dataType+"&item="+currentFileShareItems.join('&item=')+"&view=1&edit="+(assign ? "1&add=1" : "0")+"&owner="+(shareType == "admin" ? 1 : 0),
+				  dataType: "json",
+				  item: currentFileShareItems.join(", "),
+				  success: function(data) {
+				      var tar = document.getElementById('shareResult');
+				      if (! tar.innerHTML.length) {
+					  tar.innerHTML = "<div class='alert alert-info'></div>";
+				      }
+				      tar.firstChild.innerHTML += "<div>"+this.item+" shared.</div>";
+				  },
+				  error: function(jqXHR, error) {
+				      var widget = Retina.WidgetInstances.home[1];
+				  },
+				  crossDomain: true,
+				  headers: stm.authHeader
+				});
+		},
+		error: function(jqXHR, error) {
+		    var widget = Retina.WidgetInstances.home[1];
+		    console.log(jqXHR.responseText);
+		},
+		crossDomain: true,
+		headers: stm.authHeader
+	    });
+	    return;
 	}
 
-	//for (var i=0; i<entries.length; i++) {
-	var i=0;
-	jQuery.ajax({ url: url,
-		      dataType: "json",
-		      success: function(data) {
-			  var widget = Retina.WidgetInstances.home[1];
-			  
-			  jQuery.ajax({ url: RetinaConfig.auth_url + "?action=modrights&pa="+data.data.url.substring(data.data.url.lastIndexOf('/'))+"&email="+email+"&type="+dataType+"&item="+entries[i]+"&view=1&edit="+(assign ? "1&add=1" : "0")+"&owner="+(shareType == "admin" ? 1 : 0),
-					dataType: "json",
-					item: dataType=='project' ? entries[i] : (widget.currentFiles[i].node ? widget.currentFiles[i].node.file.name : widget.currentFiles[i].file.name),
-					success: function(data) {
-					    var tar = document.getElementById('shareResult');
-					    if (! tar.innerHTML.length) {
-						tar.innerHTML = "<div class='alert alert-info'></div>";
-					    }
-					    tar.firstChild.innerHTML += "<div>"+this.item+" shared.</div>";
-					},
-					error: function(jqXHR, error) {
-					    var widget = Retina.WidgetInstances.home[1];
-					},
-					crossDomain: true,
-					headers: stm.authHeader
-				      });
-		      },
-		      error: function(jqXHR, error) {
-			  var widget = Retina.WidgetInstances.home[1];
-			  console.log(jqXHR.responseText);
-		      },
-		      crossDomain: true,
-		      headers: stm.authHeader
-		    });
-	//}
-    };
-
-    widget.projectSelected = function (entry) {
-	Retina.WidgetInstances.home[1].currentProject = entry;
-	jQuery.ajax({ url: RetinaConfig.auth_url + "?action=rights&type=project&item=" + entry,
-		      dataType: "json",
-		      item: entry,
-		      success: function(data) {
-			  if (data.ERROR) {
-			      var widget = Retina.WidgetInstances.home[1];
-			      widget.main.innerHTML = "<div class='alert alert-error' style='margin: 10px;'>An error occurred accessing your permissions:<br>"+data.ERROR+"</div>";
-			  } else {
-			      var widget = Retina.WidgetInstances.home[1];
-			      
-			      widget.browser.preserveDetail = true;
-			      
-			      var html = ['<div style="padding-left: 5px;"><h4>'+entry+'</h4>'];
-			      
-			      if (data.data.length) {
-				  var users = [];
-				  for (var i=0; i<data.data.length; i++) {
-				      for (var h=0; h<data.data[i][5].length; h++) {
-					  users.push(data.data[i][5][h][0]+" ("+data.data[i][5][h][1]+") <button class='btn btn-mini btn-danger' title='revoke access' onclick='if(confirm(\"Really revoke access for this user?\")){Retina.WidgetInstances.home[1].revokeAccess(\"project\",\""+this.item+"\", \""+data.data[i][5][h][1]+"\");}'>&times;</button>");
-					     }
-					 }
-					 html.push('This project has been assigned to the following users:<br><br><ul><li>'+users.join('</li><li>')+'</li></ul>');
-				     } else {
-					 html.push('This project is not yet assigned to any user.');
-				     }
-
-				     html.push('<h5>assign to user</h5><div class="input-append"><input type="text" placeholder="email address" id="shareEmail"><button class="btn" onclick="Retina.WidgetInstances.home[1].performShare(true, true);">assign</button></div><div id="shareResult"></div>');
-				     
-				     html.push('</div>');
-				     
-				     widget.browser.sections.detailSectionContent.innerHTML = html.join("");
-				 }
-			     },
-			     error: function(jqXHR, error) {
-				 var widget = Retina.WidgetInstances.home[1];
-				 widget.main.innerHTML = "<div class='alert alert-error' style='margin: 10px;'>An error occurred accessing the data server.</div>";
-			     },
-			     crossDomain: true,
-			     headers: stm.authHeader
-		    });
+	jQuery.ajax({
+	    url: url,
+	    dataType: "json",
+	    success: function(data) {
+		var widget = Retina.WidgetInstances.home[1];
+		var dynamic = RetinaConfig.shock_preauth+data.data.url.substring(data.data.url.lastIndexOf('/'));
+		if (document.getElementById('admin_message') && document.getElementById('admin_message').value) {
+		    dynamic += "%0A%0A"+encodeURIComponent(document.getElementById('admin_message').value);
+		}
+		jQuery.ajax({ url: RetinaConfig.auth_url + "?action=modrights&dynamic="+dynamic+"&email="+email+"&type="+dataType+"&item="+entries[0]+"&view=1&edit="+(assign ? "1&add=1" : "0")+"&owner="+(shareType == "admin" ? 1 : 0),
+			      dataType: "json",
+			      item: dataType=='project' ? entries[0] : (widget.currentFiles[0].node ? widget.currentFiles[0].node.file.name : widget.currentFiles[0].file.name),
+			      success: function(data) {
+				  var tar = document.getElementById('shareResult');
+				  if (! tar.innerHTML.length) {
+				      tar.innerHTML = "<div class='alert alert-info'></div>";
+				  }
+				  tar.firstChild.innerHTML += "<div>"+this.item+" shared.</div>";
+			      },
+			      error: function(jqXHR, error) {
+				  var widget = Retina.WidgetInstances.home[1];
+			      },
+			      crossDomain: true,
+			      headers: stm.authHeader
+			    });
+	    },
+	    error: function(jqXHR, error) {
+		var widget = Retina.WidgetInstances.home[1];
+		console.log(jqXHR.responseText);
+	    },
+	    crossDomain: true,
+	    headers: stm.authHeader
+	});
     };
     
     widget.preview = function (data) {
@@ -326,44 +345,78 @@
 	html.push('<tr><th>MD5</th><td>'+data.node.file.checksum.md5+'</td></tr>');
 	html.push('<tr><th>size</th><td>'+data.node.file.size.byteSize()+'</td></tr>');
 	if (stm.user.admin) {
-	    html.push('<tr><th>access</th><td id="accessData"><img src="Retina/images/waiting.gif" style="width: 16px;"></td></tr>');
+	    html.push('<tr><th style="vertical-align: top;">access</th><td id="accessData"><img src="Retina/images/waiting.gif" style="width: 16px;"></td></tr>');
 	}
 	html.push('</table>');
 	
-	html.push('<div style="width: 100%; text-align: center; margin-top: 20px;"><button class="btn pull-left" onclick="Retina.WidgetInstances.home[1].downloadSingle(\''+data.node.id+'\', \''+data.node.file.name+'\');"><img src="Retina/images/cloud-download.png" style="width: 16px;"> download</button>');
+	html.push('<div style="width: 100%; text-align: center; margin-top: 20px;"><button class="btn pull-left" id="downloadButton" onclick="Retina.WidgetInstances.home[1].downloadSingle(\''+data.node.id+'\', \''+data.node.file.name+'\');"><img src="Retina/images/cloud-download.png" style="width: 16px;"> download</button>');
 
 	if (stm.user.admin) {
 	    html.push('</div>');
 	    html.push(widget.shareAdmin());
-	    jQuery.ajax({ url: RetinaConfig.auth_url + "?action=rights&type=file&item=" + data.node.id,
-			  dataType: "json",
-			  item: data.node.file.name,
-			  itemid: data.node.id,
-			  success: function(data) {
-			      if (data.ERROR) {
-				  document.getElementById('accessData').innerHTML = "<div class='alert alert-error' style='margin: 10px;'>An error occurred accessing your permissions:<br>"+data.ERROR+"</div>";
-			      } else {
-				  
-				  if (data.data.length) {
-				      var users = [];
-				      for (var i=0; i<data.data.length; i++) {
-					  for (var h=0; h<data.data[i][5].length; h++) {
-					      users.push(data.data[i][5][h][0]+" ("+data.data[i][5][h][1]+") <button class='btn btn-mini btn-danger' title='revoke access' onclick='if(confirm(\"Really revoke access for this user?\")){Retina.WidgetInstances.home[1].revokeAccess(\"file\",\""+this.itemid+"\", \""+data.data[i][5][h][1]+"\");}'>&times;</button>");
-					  }
-				      }
-				      document.getElementById('accessData').innerHTML = '<table><tr><td>'+users.join('</td></tr><tr><td>')+'</td></tr></table>';
-				  } else {
-				      document.getElementById('accessData').innerHTML = 'unassiged';
-				  }
-			      }
-			  },
-			  error: function(jqXHR, error) {
-			      var widget = Retina.WidgetInstances.home[1];
-			      widget.main.innerHTML = "<div class='alert alert-error' style='margin: 10px;'>An error occurred accessing the data server.</div>";
-			  },
-			  crossDomain: true,
-			  headers: stm.authHeader
-			});
+	    var promises = [];
+	    widget.selectedFileRightsData = {};
+	    promises.push(jQuery.ajax({ url: RetinaConfig.auth_url + "?action=rights&type=project&item=" + data.node.attributes.project_id+"|"+data.node.attributes.project,
+					dataType: "json",
+					success: function(data) {
+					    Retina.WidgetInstances.home[1].selectedFileRightsData['project'] = data.data;
+					},
+					crossDomain: true,
+					headers: stm.authHeader}));
+	    promises.push(jQuery.ajax({ url: RetinaConfig.auth_url + "?action=rights&type=group&item=" + data.node.attributes.project_id+"|"+data.node.attributes.group,
+					dataType: "json",
+					success: function(data) {
+					    Retina.WidgetInstances.home[1].selectedFileRightsData['group'] = data.data;
+					},
+					crossDomain: true,
+					headers: stm.authHeader}));
+	    promises.push(jQuery.ajax({ url: RetinaConfig.auth_url + "?action=rights&type=file&item=" + data.node.attributes.project_id+"|"+data.node.file.name,
+					dataType: "json",
+					success: function(data) {
+					    Retina.WidgetInstances.home[1].selectedFileRightsData['file'] = data.data;
+					},
+					crossDomain: true,
+					headers: stm.authHeader}));
+
+	    jQuery.when.apply(this, promises).then(function() {
+		var d = Retina.WidgetInstances.home[1].selectedFileRightsData;
+		var html = [];
+		if (d.project.length) {
+		    html.push('<table><tr><th>project</th></tr>')
+		    for (var i=0; i<d.project.length; i++) {
+			for (var h=0; h<d.project[i][5].length; h++) {
+			    html.push('<tr><td>'+d.project[i][5][h][0]+" ("+d.project[i][5][h][1]+") <button class='btn btn-mini btn-danger' title='revoke access' onclick='if(confirm(\"Really revoke access for this user?\")){Retina.WidgetInstances.home[1].revokeAccess(\"project\",\""+d.project[i][1]+"\", \""+d.project[i][5][h][1]+"\");}'>&times;</button></td></tr>")
+			}
+		    }
+		    html.push('</table>');
+		} else {
+		    html.push('<i>- project not shared - </i><br>');
+		}
+		if (d.group.length) {
+		    html.push('<table><tr><th>group</th></tr>')
+		    for (var i=0; i<d.group.length; i++) {
+			for (var h=0; h<d.group[i][5].length; h++) {
+			    html.push('<tr><td>'+d.group[i][5][h][0]+" ("+d.group[i][5][h][1]+") <button class='btn btn-mini btn-danger' title='revoke access' onclick='if(confirm(\"Really revoke access for this user?\")){Retina.WidgetInstances.home[1].revokeAccess(\"group\",\""+d.group[i][1]+"\", \""+d.group[i][5][h][1]+"\");}'>&times;</button></td></tr>");
+			}
+		    }
+		    html.push('</table>');
+		} else {
+		    html.push('<i>- group not shared -</i><br>');
+		}
+		if (d.file.length) {
+		    html.push('<table><tr><th>file</th></tr>')
+		    for (var i=0; i<d.file.length; i++) {
+			for (var h=0; h<d.file[i][5].length; h++) {
+			    html.push('<tr><td>'+d.file[i][5][h][0]+" ("+d.file[i][5][h][1]+") <button class='btn btn-mini btn-danger' title='revoke access' onclick='if(confirm(\"Really revoke access for this user?\")){Retina.WidgetInstances.home[1].revokeAccess(\"file\",\""+d.file[i][1]+"\", \""+d.file[i][5][h][1]+"\");}'>&times;</button></td></tr>")
+			}
+		    }
+		    html.push('</table>');
+		} else {
+		    html.push('<i>- file not shared -</i><br>');
+		}
+		
+		document.getElementById('accessData').innerHTML = html.join('');
+	    });
 	} else {
 	    html.push('<button class="btn pull-right" onclick="jQuery(\'#shareDiv\').toggle();"><img src="Retina/images/share.png" style="width: 18px; position: relative; bottom: 2px;"> sharing options</button></div>');
 	    html.push(widget.share());
@@ -388,7 +441,7 @@
 	var html = ['<h4>Multiple File Selection</h4>'];
 	html.push('<p>You have selected the '+files.length+' files below totalling '+total_size.byteSize()+'.</p>');
 	html.push('<textarea disabled style="border: none; width: 350px; height: 220px; box-shadow: none; background-color: white; cursor: pointer;">'+fns.join('\n')+'</textarea>');
-	html.push('<div style="width: 100%; text-align: center; margin-top: 20px;"><button class="btn pull-left" onclick="Retina.WidgetInstances.home[1].downloadMultiple();"><img src="Retina/images/cloud-download.png" style="width: 16px;"> download</button>');
+	html.push('<div style="width: 100%; text-align: center; margin-top: 20px;"><button class="btn pull-left" onclick="Retina.WidgetInstances.home[1].downloadMultiple();" id="downloadButton"><img src="Retina/images/cloud-download.png" style="width: 16px;"> download</button>');
 
 	if (stm.user.admin) {
 	    html.push('</div>');
@@ -406,14 +459,47 @@
     widget.downloadMultiple = function () {
 	var widget = this;
 
+	document.getElementById('downloadButton').innerHTML = '<img src="Retina/images/waiting.gif" style="width: 16px;">';
+	document.getElementById('downloadButton').setAttribute('disabled', 'disabled');
+	
+	var ids = []
+	var fns = [];
 	for (var i=0; i<widget.currentFiles.length; i++) {
-	    widget.downloadSingle(widget.currentFiles[i].id, widget.currentFiles[i].file.name);
+	    ids.push(widget.currentFiles[i].id);
+	    fns.push(widget.currentFiles[i].attributes.project_id+"|"+widget.currentFiles[i].attributes.project+"|"+widget.currentFiles[i].attributes.group+"|"+widget.currentFiles[i].attributes.name);
 	}
+	var data = 'download_url=1&archive_format=zip&ids='+ids.join(",")+"&sharenames="+fns.join(",");
+	jQuery.ajax({
+	    method: "POST",
+	    url: RetinaConfig.shock_url + "/node/",
+	    data: data,
+	    success: function(data) {
+		var url = RetinaConfig.shock_preauth+data.data.url.substring(data.data.url.lastIndexOf('/'));
+		var link = document.createElement('a');
+		link.setAttribute('href', url);
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		document.getElementById('downloadButton').innerHTML = '<img src="Retina/images/cloud-download.png" style="width: 16px;"> download';
+		document.getElementById('downloadButton').removeAttribute('disabled');
+	    },
+	    error: function(jqXHR, error) {
+		var widget = Retina.WidgetInstances.home[1];
+		widget.sections.detailSectionContent.innerHTML = "<div class='alert alert-error' style='margin: 10px;'>An error occurred downloading the data.</div>";
+		document.getElementById('downloadButton').innerHTML = '<img src="Retina/images/cloud-download.png" style="width: 16px;"> download';
+		document.getElementById('downloadButton').removeAttribute('disabled');
+	    },
+	    crossDomain: true,
+	    headers: stm.authHeader
+	});
     };
 
     widget.downloadSingle = function (node, name) {
 	var widget = this;
 
+	document.getElementById('downloadButton').innerHTML = '<img src="Retina/images/waiting.gif" style="width: 16px;">';
+	document.getElementById('downloadButton').setAttribute('disabled', 'disabled');
+	
 	jQuery.ajax({ url: widget.browser.shockBase + "/node/" + node + "?download_url&filename="+name,
 		      dataType: "json",
 		      success: function(data) {
@@ -430,10 +516,14 @@
 			      widget.sections.detailSectionContent.innerHTML = "<div class='alert alert-error' style='margin: 10px;'>The data returned from the server was invalid.</div>";
 			      console.log(data);
 			  }
+			  document.getElementById('downloadButton').innerHTML = '<img src="Retina/images/cloud-download.png" style="width: 16px;"> download';
+			  document.getElementById('downloadButton').removeAttribute('disabled');
 		      },
 		      error: function(jqXHR, error) {
 			  var widget = Retina.WidgetInstances.shockbrowse[1];
 			  widget.sections.detailSectionContent.innerHTML = "<div class='alert alert-error' style='margin: 10px;'>An error occurred downloading the data.</div>";
+			  document.getElementById('downloadButton').innerHTML = '<img src="Retina/images/cloud-download.png" style="width: 16px;"> download';
+			  document.getElementById('downloadButton').removeAttribute('disabled');
 		      },
 		      crossDomain: true,
 		      headers: stm.authHeader
@@ -455,6 +545,8 @@
 			     },
 			     error: function(jqXHR, error) {
 				 var widget = Retina.WidgetInstances.home[1];
+				 console.log(jqXHR);
+				 console.log(error);
 				 widget.main.innerHTML = "<div class='alert alert-error' style='margin: 10px;'>An error occurred accessing the data server.</div>";
 			     },
 			     crossDomain: true,
