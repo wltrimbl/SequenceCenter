@@ -27,7 +27,8 @@
 	    document.getElementById('login_space').innerHTML = '<button title="click to log out" class="btn btn-inverse" onclick="logout();" style="margin-right: 30px; position: relative; top: 10px;"><i class="icon icon-white icon-user" style="margin-right: 5px;"></i>'+stm.user.name+'</button>';
 	    
 	    if (stm.user.admin) {
-		widget.main.innerHTML = "<p><div class='btn-group' data-toggle='buttons-radio'><button class='btn active' onclick='Retina.WidgetInstances.home[1].showSharedFolders(\"all\");'>show all</button><button class='btn' onclick='widget.getRights().then(function(){Retina.WidgetInstances.home[1].showSharedFolders(\"assigned\")});'>show assigned</button><button class='btn' onclick='widget.getRights().then(function(){Retina.WidgetInstances.home[1].showSharedFolders(\"unassigned\")});'>show unassigned</button></div></p><div id='shock'></div><div style='clear: both; height: 50px;'></div><div id='users'></div>";
+		widget.getRights();
+		widget.main.innerHTML = "<p><div class='btn-group' data-toggle='buttons-radio'><button class='btn active' onclick='Retina.WidgetInstances.home[1].showSharedFolders(\"all\");'>show all</button><button class='btn' onclick='widget.getRights().then(function(){Retina.WidgetInstances.home[1].showSharedFolders(\"assigned\")});'>show assigned</button><button class='btn' onclick='widget.getRights().then(function(){Retina.WidgetInstances.home[1].showSharedFolders(\"unassigned\")});'>show unassigned</button><button class='btn' onclick='Retina.WidgetInstances.home[1].showSharedFolders(\"partial\");'>show partially assigned</button></div></p><div id='shock'></div><div style='clear: both; height: 50px;'></div><div id='users'></div>";
 
 		jQuery.ajax({ url: RetinaConfig.shock_url + "/node/?query&distinct=project_id&owner=ANL-SEQ-Core",
 			      dataType: "json",
@@ -54,7 +55,7 @@
 				      "detailType": "preview",
 				      "customPreview": widget.preview,
 				      "customMultiPreview": widget.multiPreview,
-				      "activateFolderfilterCallback": null,
+				      "activateFolderfilterCallback": widget.highlight,
 				      "folderFilters": [ { "dropdown": false, "attribute": "project_id", "title": "run", "entries": entries, "filterable": true } ],    
 				      "presetFilters": { "owner": "ANL-SEQ-Core", "project_id": entries[0]  },
 				      "disableCustomFilter": true,
@@ -170,6 +171,32 @@
 	    }
 	} else {
 	    widget.main.innerHTML = "<h3>Authentication required</h3><p>You must be logged in to view this page.</p>";
+	}
+    };
+
+    widget.highlight = function () {
+	var widget = Retina.WidgetInstances.home[1];
+
+	var fl = widget.browser.fileList;
+	var projects = {};
+	var groups = {};
+	var files = {};
+	for (var i=0; i<stm.DataStore.rights.length; i++) {
+	    var r = stm.DataStore.rights[i];
+	    if (r[0] == 'group') {
+		groups[r[1]] = true;
+	    } else if (r[0] == 'file') {
+		files[r[1]] = true;
+	    } else if (r[0] == 'project') {
+		projects[r[1]] = true;
+	    }
+	}
+	
+	for (var i=0; i<fl.length; i++) {
+	    var atts = fl[i].attributes;
+	    if (projects[atts.project_id + "|" + atts.project] || groups[atts.project_id+"|"+atts.group] || files[atts.project_id+"|"+atts.name]) {
+		jQuery(widget.browser.sections.fileSection.firstChild.childNodes[i+1]).addClass('alert-success');
+	    }
 	}
     };
 
@@ -576,9 +603,13 @@
 	var widget = this;
 
 	var active = {};
+	var partial = {};
 	for (var i=0; i<stm.DataStore.rights.length; i++) {
 	    if (stm.DataStore.rights[i][0] == 'project') {
-		active[stm.DataStore.rights[i][1]] = true;
+		active[stm.DataStore.rights[i][1].split(/\|/)[0]] = true;
+	    }
+	    else if (stm.DataStore.rights[i][0] == 'group' || stm.DataStore.rights[i][0] == 'file') {
+		partial[stm.DataStore.rights[i][1].split(/\|/)[0]] = true;
 	    }
 	}
 	var entries = [];
@@ -589,7 +620,10 @@
 	    else if (which == "assigned" && active[widget.runs[i]]) {
 		entries.push(widget.runs[i]);
 	    }
-	    else if (which == "unassigned" && ! active[widget.runs[i]]) {
+	    else if (which == "unassigned" && (! active[widget.runs[i]] && ! partial[widget.runs[i]])) {
+		entries.push(widget.runs[i]);
+	    }
+	    else if (which == "partial" && partial[widget.runs[i]] && ! active[widget.runs[i]]) {
 		entries.push(widget.runs[i]);
 	    }
 	}
