@@ -24,7 +24,7 @@
 
 	if (stm.user) {
 
-	    document.getElementById('login_space').innerHTML = '<button title="click to log out" class="btn btn-inverse" onclick="logout();" style="margin-right: 30px; position: relative; top: 10px;"><i class="icon icon-white icon-user" style="margin-right: 5px;"></i>'+stm.user.name+'</button>';
+	    document.getElementById('login_space').innerHTML = '<button title="click to log out" class="btn btn-inverse" onclick="logout();" style="margin-right: 30px; position: relative; top: 10px;"><span class="btn btn-danger btn-mini" style="margin-left: 5px;position: relative;float: right;left: 5px;"><i class="icon icon-white icon-off"></i></span>'+stm.user.name+'</button>';
 	    
 	    if (stm.user.admin) {
 		widget.getRights();
