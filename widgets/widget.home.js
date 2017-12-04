@@ -378,6 +378,10 @@
 	
 	html.push('<div style="width: 100%; text-align: center; margin-top: 20px;"><button class="btn pull-left" id="downloadButton" onclick="Retina.WidgetInstances.home[1].downloadSingle(\''+data.node.id+'\', \''+data.node.file.name+'\');"><img src="Retina/images/cloud-download.png" style="width: 16px;"> download</button>');
 
+	html.push('<button class="btn pull-left" style="margin-left: 10px;" id="downloadLinkButton" onclick="Retina.WidgetInstances.home[1].downloadLinkSingle(\''+data.node.id+'\', \''+data.node.file.name+'\');"><img src="Retina/images/ftp.png" style="width: 16px;"> download link</button>');
+
+	html.push('<button class="btn pull-left" style="margin-left: 10px;" id="downloadLinkButton" onclick="Retina.WidgetInstances.home[1].downloadLinkSingle(\''+data.node.id+'\', \''+data.node.file.name+'\');"><img src="Retina/images/ftp.png" style="width: 16px;"> download link</button>');
+	
 	if (stm.user.admin) {
 	    html.push('</div>');
 	    html.push(widget.shareAdmin());
@@ -551,6 +555,39 @@
 			  widget.sections.detailSectionContent.innerHTML = "<div class='alert alert-error' style='margin: 10px;'>An error occurred downloading the data.</div>";
 			  document.getElementById('downloadButton').innerHTML = '<img src="Retina/images/cloud-download.png" style="width: 16px;"> download';
 			  document.getElementById('downloadButton').removeAttribute('disabled');
+		      },
+		      crossDomain: true,
+		      headers: stm.authHeader
+		    });
+    };
+
+    widget.downloadLinkSingle = function (node, name) {
+	var widget = this;
+
+	document.getElementById('downloadLinkButton').innerHTML = '<img src="Retina/images/waiting.gif" style="width: 16px;">';
+	document.getElementById('downloadLinkButton').setAttribute('disabled', 'disabled');
+	
+	jQuery.ajax({ url: widget.browser.shockBase + "/node/" + node + "?download_url&filename="+name,
+		      dataType: "json",
+		      success: function(data) {
+			  var widget = Retina.WidgetInstances.shockbrowse[1];
+			  if (data != null) {
+			      if (data.error != null) {
+				  widget.sections.detailSectionContent.innerHTML = "<div class='alert alert-error' style='margin: 10px;'>There was an error downloading the data: "+data.error+"</div>";
+			      }
+			      alert("Your download URL is\n\n"+data.data.url+"\n\nIt is valid for one time download.");
+			  } else {
+			      widget.sections.detailSectionContent.innerHTML = "<div class='alert alert-error' style='margin: 10px;'>The data returned from the server was invalid.</div>";
+			      console.log(data);
+			  }
+			  document.getElementById('downloadLinkButton').innerHTML = '<img src="Retina/images/ftp.png" style="width: 16px;"> download';
+			  document.getElementById('downloadLinkButton').removeAttribute('disabled');
+		      },
+		      error: function(jqXHR, error) {
+			  var widget = Retina.WidgetInstances.shockbrowse[1];
+			  widget.sections.detailSectionContent.innerHTML = "<div class='alert alert-error' style='margin: 10px;'>An error occurred downloading the data.</div>";
+			  document.getElementById('downloadLinkButton').innerHTML = '<img src="Retina/images/ftp.png" style="width: 16px;"> download';
+			  document.getElementById('downloadLinkButton').removeAttribute('disabled');
 		      },
 		      crossDomain: true,
 		      headers: stm.authHeader
