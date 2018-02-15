@@ -536,7 +536,7 @@
 	document.getElementById('downloadButton').innerHTML = '<img src="Retina/images/waiting.gif" style="width: 16px;">';
 	document.getElementById('downloadButton').setAttribute('disabled', 'disabled');
 	name = name.replace(/\.gz$/, "");
-	jQuery.ajax({ url: widget.browser.shockBase + "/node/" + node + "?download_url&compression=gzip&filename="+name,
+	jQuery.ajax({ url: widget.browser.shockBase + "/node/" + node + "?download_url&filename="+name, // &compression=gzip
 		      dataType: "json",
 		      success: function(data) {
 			  var widget = Retina.WidgetInstances.shockbrowse[1];
@@ -572,7 +572,7 @@
 	document.getElementById('downloadLinkButton').innerHTML = '<img src="Retina/images/waiting.gif" style="width: 16px;">';
 	document.getElementById('downloadLinkButton').setAttribute('disabled', 'disabled');
 	
-	jQuery.ajax({ url: widget.browser.shockBase + "/node/" + node + "?download_url&filename="+name,
+	jQuery.ajax({ url: widget.browser.shockBase + "/node/" + node + "?download_url&filename="+name, // &compression=gzip
 		      dataType: "json",
 		      success: function(data) {
 			  var widget = Retina.WidgetInstances.shockbrowse[1];
