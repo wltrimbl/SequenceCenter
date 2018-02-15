@@ -24,7 +24,7 @@
 
 	if (stm.user) {
 
-	    document.getElementById('login_space').innerHTML = '<button title="click to log out" class="btn btn-inverse" onclick="logout();" style="margin-right: 30px; position: relative; top: 10px;"><i class="icon icon-white icon-user" style="margin-right: 5px;"></i>'+stm.user.name+'</button>';
+	    document.getElementById('login_space').innerHTML = '<button title="click to log out" class="btn btn-inverse" onclick="logout();" style="margin-right: 30px; position: relative; top: 10px;"><span class="btn btn-danger btn-mini" style="margin-left: 5px;position: relative;float: right;left: 5px;"><i class="icon icon-white icon-off"></i></span>'+stm.user.name+'</button>';
 	    
 	    if (stm.user.admin) {
 		widget.getRights();
@@ -34,7 +34,7 @@
 			      dataType: "json",
 			      success: function(data) {
 				  var widget = Retina.WidgetInstances.home[1];
-				  var entries = widget.runs = data.data.sort(Retina.sortDesc);				  
+				  var entries = widget.runs = data.data.sort(Retina.sortDesc);
 				  widget.browser = Retina.Widget.create('shockbrowse', {
 				      "target": document.getElementById('shock'),
 				      "order": "created_on",
@@ -86,6 +86,11 @@
 				      document.getElementById('users').innerHTML = '<div class="alert alert-error">could not access user database:<br/><br/>'+data.ERROR+'</div>';
 				  } else {
 				      widget.users = data.data;
+				      for (var i=0; i<widget.users.length; i++) {
+					  if (widget.users[i][4] != 'yes') {
+					      widget.users[i][4] = '<button class="btn btn-mini" onclick="Retina.WidgetInstances.home[1].resendConfirmation('+i+');">resend confirmation</button>';
+					  }
+				      }
 				      widget.usercolumns = data.columns;
 				      widget.showUsers();
 				  }
@@ -231,6 +236,8 @@
 
 	var atts = widget.currentFiles[0].node ? widget.currentFiles[0].node.attributes : widget.currentFiles[0].attributes;
 
+	html.push('<div style="clear: both; text-align: center; padding-top: 15px; margin-bottom: -15px;"><button class="btn btn-danger" onclick="if(confirm(\'Really delete all selected files? This cannot be undone!\')){Retina.WidgetInstances.shockbrowse[1].'+(Retina.WidgetInstances.shockbrowse[1].selectedFile ? 'removeNode({node:\''+Retina.WidgetInstances.shockbrowse[1].selectedFile.getAttribute('fi')+'\'})' : 'removeMultipleNodes()')+';}" id="shockbrowserMultiDeleteButton"><i class="icon icon-trash" style="margin-right: 5px;"></i>delete</button></div><div id="shockbrowserMultiProgressDiv"></div>');
+	
 	html.push('<div id="shareDiv" style="clear: both; padding-top: 20px;">');
 	html.push('<h4>What do you want to assign?</h4><ul style="list-style-type: none;">');
 	html.push('<li><input style="position: relative; bottom: 3px; margin-right: 5px;" type="radio" name="sharewhat" checked value="project" id="shareProject">this project ('+atts.project+')</li>');
@@ -292,7 +299,7 @@
 		    var widget = Retina.WidgetInstances.home[1];
 		    var dynamic = RetinaConfig.shock_preauth+data.data.url.substring(data.data.url.lastIndexOf('/'));
 		    if (document.getElementById('admin_message') && document.getElementById('admin_message').value) {
-			dynamic += "%0A%0A"+encodeURIComponent(document.getElementById('admin_message').value);
+			dynamic += "<br><br><b>"+encodeURIComponent(document.getElementById('admin_message').value)+"</b>";
 		    }
 		    jQuery.ajax({ url: RetinaConfig.auth_url + "?action=modrights&dynamic="+dynamic+"&email="+email+"&type="+dataType+"&item="+currentFileShareItems.join('&item=')+"&view=1&edit="+(assign ? "1&add=1" : "0")+"&owner="+(shareType == "admin" ? 1 : 0),
 				  dataType: "json",
@@ -328,7 +335,7 @@
 		var widget = Retina.WidgetInstances.home[1];
 		var dynamic = RetinaConfig.shock_preauth+data.data.url.substring(data.data.url.lastIndexOf('/'));
 		if (document.getElementById('admin_message') && document.getElementById('admin_message').value) {
-		    dynamic += "%0A%0A"+encodeURIComponent(document.getElementById('admin_message').value);
+		    dynamic += "<br><br><b>"+encodeURIComponent(document.getElementById('admin_message').value)+"</b>";
 		}
 		jQuery.ajax({ url: RetinaConfig.auth_url + "?action=modrights&dynamic="+dynamic+"&email="+email+"&type="+dataType+"&item="+entries[0]+"&view=1&edit="+(assign ? "1&add=1" : "0")+"&owner="+(shareType == "admin" ? 1 : 0),
 			      dataType: "json",
@@ -378,6 +385,8 @@
 	
 	html.push('<div style="width: 100%; text-align: center; margin-top: 20px;"><button class="btn pull-left" id="downloadButton" onclick="Retina.WidgetInstances.home[1].downloadSingle(\''+data.node.id+'\', \''+data.node.file.name+'\');"><img src="Retina/images/cloud-download.png" style="width: 16px;"> download</button>');
 
+	html.push('<button class="btn pull-left" style="margin-left: 10px;" id="downloadLinkButton" onclick="Retina.WidgetInstances.home[1].downloadLinkSingle(\''+data.node.id+'\', \''+data.node.file.name+'\');"><img src="Retina/images/ftp.png" style="width: 16px;"> download link</button>');
+	
 	if (stm.user.admin) {
 	    html.push('</div>');
 	    html.push(widget.shareAdmin());
@@ -526,8 +535,8 @@
 
 	document.getElementById('downloadButton').innerHTML = '<img src="Retina/images/waiting.gif" style="width: 16px;">';
 	document.getElementById('downloadButton').setAttribute('disabled', 'disabled');
-	
-	jQuery.ajax({ url: widget.browser.shockBase + "/node/" + node + "?download_url&filename="+name,
+	name = name.replace(/\.gz$/, "");
+	jQuery.ajax({ url: widget.browser.shockBase + "/node/" + node + "?download_url&filename="+name, // &compression=gzip
 		      dataType: "json",
 		      success: function(data) {
 			  var widget = Retina.WidgetInstances.shockbrowse[1];
@@ -551,6 +560,39 @@
 			  widget.sections.detailSectionContent.innerHTML = "<div class='alert alert-error' style='margin: 10px;'>An error occurred downloading the data.</div>";
 			  document.getElementById('downloadButton').innerHTML = '<img src="Retina/images/cloud-download.png" style="width: 16px;"> download';
 			  document.getElementById('downloadButton').removeAttribute('disabled');
+		      },
+		      crossDomain: true,
+		      headers: stm.authHeader
+		    });
+    };
+
+    widget.downloadLinkSingle = function (node, name) {
+	var widget = this;
+
+	document.getElementById('downloadLinkButton').innerHTML = '<img src="Retina/images/waiting.gif" style="width: 16px;">';
+	document.getElementById('downloadLinkButton').setAttribute('disabled', 'disabled');
+	
+	jQuery.ajax({ url: widget.browser.shockBase + "/node/" + node + "?download_url&filename="+name, // &compression=gzip
+		      dataType: "json",
+		      success: function(data) {
+			  var widget = Retina.WidgetInstances.shockbrowse[1];
+			  if (data != null) {
+			      if (data.error != null) {
+				  widget.sections.detailSectionContent.innerHTML = "<div class='alert alert-error' style='margin: 10px;'>There was an error downloading the data: "+data.error+"</div>";
+			      }
+			      alert("Your download URL is\n\n"+data.data.url+"\n\nIt is valid for one time download.");
+			  } else {
+			      widget.sections.detailSectionContent.innerHTML = "<div class='alert alert-error' style='margin: 10px;'>The data returned from the server was invalid.</div>";
+			      console.log(data);
+			  }
+			  document.getElementById('downloadLinkButton').innerHTML = '<img src="Retina/images/ftp.png" style="width: 16px;"> download';
+			  document.getElementById('downloadLinkButton').removeAttribute('disabled');
+		      },
+		      error: function(jqXHR, error) {
+			  var widget = Retina.WidgetInstances.shockbrowse[1];
+			  widget.sections.detailSectionContent.innerHTML = "<div class='alert alert-error' style='margin: 10px;'>An error occurred downloading the data.</div>";
+			  document.getElementById('downloadLinkButton').innerHTML = '<img src="Retina/images/ftp.png" style="width: 16px;"> download';
+			  document.getElementById('downloadLinkButton').removeAttribute('disabled');
 		      },
 		      crossDomain: true,
 		      headers: stm.authHeader
@@ -695,6 +737,35 @@
 	});
     };
 
+    widget.resendConfirmation = function (id) {
+	var widget = this;
+
+	var user = widget.users[id][0];
+
+	jQuery.ajax({ url: RetinaConfig.auth_url + "?action=reconfirm&login="+user,
+		      dataType: "json",
+		      success: function(data) {
+			  var widget = Retina.WidgetInstances.home[1];
+			  if (! data.error) {
+			      alert('confirmation email resent');
+			  } else {
+			      alert('resending confirmation failed: '+data.ERROR);
+			  }
+		      },
+		      error: function(jqXHR, error) {
+			  var widget = Retina.WidgetInstances.home[1];
+			  try {
+			      var error = JSON.parse(jqXHR.responseText).ERROR;
+			      alert('resending confirmation failed: '+error);
+			  } catch (error) {
+			      alert('there was an error sending the confirmation email');
+			  }
+		      },
+		      crossDomain: true,
+		      headers: stm.authHeader
+		    });
+    };
+    
     widget.impersonateUser = function (login) {
 	var widget = this;
 
