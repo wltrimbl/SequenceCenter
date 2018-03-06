@@ -301,7 +301,7 @@
 		    if (document.getElementById('admin_message') && document.getElementById('admin_message').value) {
 			dynamic += "<br><br><b>"+encodeURIComponent(document.getElementById('admin_message').value)+"</b>";
 		    }
-		    jQuery.ajax({ url: RetinaConfig.auth_url + "?action=modrights&dynamic="+dynamic+"&email="+email+"&type="+dataType+"&item="+currentFileShareItems.join('&item=')+"&view=1&edit="+(assign ? "1&add=1" : "0")+"&owner="+(shareType == "admin" ? 1 : 0),
+		    jQuery.ajax({ url: RetinaConfig.auth_url + "?action=modrights&dynamic="+dynamic+"&email="+email+"&type="+dataType+"&item="+currentFileShareItems.join('&item=')+"&view=1&edit="+(assign ? "1" : "0")+"&add=1&owner="+(shareType == "admin" ? 1 : 0),
 				  dataType: "json",
 				  item: currentFileShareItems.join(", "),
 				  success: function(data) {
@@ -331,13 +331,14 @@
 	jQuery.ajax({
 	    url: url,
 	    dataType: "json",
+	    method: 'POST',
 	    success: function(data) {
 		var widget = Retina.WidgetInstances.home[1];
 		var dynamic = RetinaConfig.shock_preauth+data.data.url.substring(data.data.url.lastIndexOf('/'));
 		if (document.getElementById('admin_message') && document.getElementById('admin_message').value) {
 		    dynamic += "<br><br><b>"+encodeURIComponent(document.getElementById('admin_message').value)+"</b>";
 		}
-		jQuery.ajax({ url: RetinaConfig.auth_url + "?action=modrights&dynamic="+dynamic+"&email="+email+"&type="+dataType+"&item="+entries[0]+"&view=1&edit="+(assign ? "1&add=1" : "0")+"&owner="+(shareType == "admin" ? 1 : 0),
+		jQuery.ajax({ url: RetinaConfig.auth_url + "?action=modrights&dynamic="+dynamic+"&email="+email+"&type="+dataType+"&item="+entries[0]+"&view=1&edit="+(assign ? "1" : "0")+"&add=1&owner="+(shareType == "admin" ? 1 : 0),
 			      dataType: "json",
 			      item: dataType=='project' ? entries[0] : (widget.currentFiles[0].node ? widget.currentFiles[0].node.file.name : widget.currentFiles[0].file.name),
 			      success: function(data) {
