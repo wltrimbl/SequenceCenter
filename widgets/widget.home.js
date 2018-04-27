@@ -44,7 +44,7 @@
 				      "calculateMD5": true,
 				      "initialFileDetailRatio": 0.6,
 				      "requireLogin": true,
-				      "showResizer": false,
+				      "showResizer": true,
 				      "middleResize": false,
 				      "title": "Sequencing Core Admin Project Browser 1.0",
 				      "showToolBar": false,
@@ -68,6 +68,12 @@
 				      ]
 				  });
 				  widget.browser.loginAction({ "action": "login", "result": "success", "user": stm.user, "authHeader": stm.authHeader });
+				  window.addEventListener('resize', function() {
+				      var w = Retina.WidgetInstances.shockbrowse[1];
+				      w.width = w.target.offsetWidth - 20;	    
+				      w.height = w.target.offsetHeight || ((window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight) - 20 - w.target.getBoundingClientRect().top);
+				      w.display();
+				  });
 			      },
 			      error: function(jqXHR, error) {
 				  var widget = Retina.WidgetInstances.home[1];
@@ -143,7 +149,7 @@
 			    "allowMultiFileUpload": true,
 			    "calculateMD5": true,
 			    "initialFileDetailRatio": 0.6,
-			    "showResizer": false,
+			    "showResizer": true,
 			    "middleResize": false,
 			    "title": "Sequencing Core File Browser 1.0",
 			    "showToolBar": false,
@@ -169,6 +175,12 @@
 			    ]
 			});
 			widget.browser.loginAction({ "action": "login", "result": "success", "user": stm.user, "authHeader": stm.authHeader });
+			window.addEventListener('resize', function() {
+			    var w = Retina.WidgetInstances.shockbrowse[1];
+			    w.width = w.target.offsetWidth - 20;	    
+			    w.height = w.target.offsetHeight || ((window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight) - 20 - w.target.getBoundingClientRect().top);
+			    w.display();
+			});
 		    } else {
 			widget.main.innerHTML = '<div class="alert alert-info" style="width: 500px;">You currently do not have access to any data.</div>';
 		    }
@@ -219,8 +231,8 @@
 	html.push('<li><input style="position: relative; bottom: 3px; margin-right: 5px;" type="radio" name="sharewhat" value="file" id="shareFile">the selected file'+(widget.currentFiles.length > 1 ? "s" : "")+'</li>');
 	html.push('</ul>');
 	html.push('<h4>How do you want to share?</h4><ul style="list-style-type: none;">');
-	html.push('<li><input style="position: relative; bottom: 3px; margin-right: 5px;" type="radio" name="sharehow" checked value="view" id="shareView">the user can only view / download</li>');
-	html.push('<li><input style="position: relative; bottom: 3px; margin-right: 5px;" type="radio" name="sharehow" value="shareable">the user can share with others</li>');
+	html.push('<li><input style="position: relative; bottom: 3px; margin-right: 5px;" type="radio" name="sharehow" value="view" id="shareView">the user can only view / download</li>');
+	html.push('<li><input style="position: relative; bottom: 3px; margin-right: 5px;" type="radio" name="sharehow" checked value="shareable" id="shareOnce">the user can share with others</li>');
 	html.push('</ul>');
 	html.push('<h4>Who do you want to share with?</h4>');
 	html.push('<div class="input-append"><input type="text" placeholder="email address" id="shareEmail"><button class="btn" onclick="Retina.WidgetInstances.home[1].performShare();">share</button></div>');
@@ -269,7 +281,7 @@
 	}
 
 	var entries = [];
-	var url = RetinaConfig.shock_url + "/node/?query&download_url&archive=zip&";
+	var url = "query&download_url&archive=zip&";
 	if (dataType == 'project') {
 	    var node = widget.currentFiles[0].node ? widget.currentFiles[0].node : widget.currentFiles[0];
 	    entries.push(node.attributes.project_id+'|'+node.attributes.project);
@@ -313,6 +325,7 @@
 				  },
 				  error: function(jqXHR, error) {
 				      var widget = Retina.WidgetInstances.home[1];
+				      document.getElementById('shareResult').innerHTML = "<div class='alert alert-error'>You only have view permissions for this data and may not share it with others.</div>";
 				  },
 				  crossDomain: true,
 				  headers: stm.authHeader
@@ -320,7 +333,7 @@
 		},
 		error: function(jqXHR, error) {
 		    var widget = Retina.WidgetInstances.home[1];
-		    console.log(jqXHR.responseText);
+		    document.getElementById('shareResult').innerHTML = "<div class='alert alert-error'>You only have view permissions for this data and may not share it with others.</div>";
 		},
 		crossDomain: true,
 		headers: stm.authHeader
@@ -329,9 +342,9 @@
 	}
 
 	jQuery.ajax({
-	    url: url,
+	    url: RetinaConfig.shock_url + "/node/?"+url,
 	    dataType: "json",
-	    method: 'POST',
+	    method: 'GET',
 	    success: function(data) {
 		var widget = Retina.WidgetInstances.home[1];
 		var dynamic = RetinaConfig.shock_preauth+data.data.url.substring(data.data.url.lastIndexOf('/'));
