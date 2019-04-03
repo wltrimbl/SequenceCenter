@@ -1,0 +1,16 @@
+{
+    "SECRET_KEY" : "Hallo Wolfgang, Du bist ein Genie" ,
+    "DATABASE" : {
+        "HOST" : "mysql" ,
+        "USER" : "demo" ,
+        "PASSWORD" : "demo" 
+    },
+    "APP" : {
+        "NAME" : "placeholder" ,
+        "SECRET" : "placeholder" ,
+        "URL" : "localhost:8060" 
+    },
+    "LEGACY_API" : {
+        "URL" : "placeholder"
+    }
+}
