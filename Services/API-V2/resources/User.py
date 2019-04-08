@@ -19,12 +19,12 @@ users = [
 ]
 
 class User(Resource):
-    
-    ga = GoogleAnalytics()   
+    """ User class """
+    # ga = GoogleAnalytics()   
 
     def get(self , login = None ):
-
-        (response, ERROR) = self.ga.track_pageview("/" + request.endpoint)
+        print(request.endpoint)
+        # (response, ERROR) = self.ga.track_pageview("/" + request.endpoint)
 
         if login :
             for user in users:
@@ -36,6 +36,7 @@ class User(Resource):
                     user['script_root'] = request.endpoint
                     user['url_root'] = request.url_root
                     return  user, 200
+                
         return current_app.config['SECRET_KEY'] , 404
 
     def put(self,login):
