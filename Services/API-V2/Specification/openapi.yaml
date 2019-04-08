@@ -1,0 +1,401 @@
+openapi: 3.0.0
+info:
+  title: Sequence Center
+  version: 2.0-alpha
+  description: Sequence Center Data Access API
+components:
+    schemas:
+      ID : 
+        type: string
+      URI : 
+        type: string 
+      PID : 
+        type: string 
+      RID :
+        type: string
+      JID :
+        type: string
+      FID:
+        type: string
+      USER:
+        type: object
+        discriminator: 
+          propertyName: petType
+        properties:
+          name: 
+            type: string
+          login: 
+            $ref: "#/components/schemas/ID"
+          id:
+            type: string
+          email:
+            type: string
+            format: email
+        required: [
+          "login"
+        ]
+      RIGHT:
+        type: object
+        properties:
+          data_id: 
+            type: string
+          data_uri:
+            $ref: "#/components/schemas/URI"
+          data_type: 
+            type: string
+          owner: 
+            type: boolean
+          read:
+            type: boolean
+          write: 
+            type: boolean
+          execute: 
+            description: Run workflow on data_id
+            type: boolean
+          share: 
+            type: boolean
+      RIGHTS:
+        type: object
+        properties:
+          user:
+            $ref: "#/components/schemas/USER"
+          groups: 
+            type: array
+            items:
+              type: string
+          rights:
+            type: array
+            items:
+              $ref:  "#/components/schemas/RIGHT"
+      file:
+        type: object
+        properties:
+          id:
+            $ref: "#/components/schemas/ID"
+          project:  
+            type: string
+          name: 
+            type: string 
+          sample: 
+            type: string
+          created: 
+            type: date 
+          MD5: 
+            type: string
+          size: 
+            type: integer 
+          access: 
+            type: object
+            properties:
+              user: 
+                description: User Name or login
+                type: string
+              read: 
+                type: boolean
+              share: 
+                type: bollean
+              owner:
+                type: boolean
+        
+      
+paths:
+  /user:
+    summary: User object
+    get: 
+      tags: [ "User" ]
+      responses:
+        200: 
+          description: List of user objects
+          content: 
+            "application/json" :
+              schema:
+                $ref: "#/components/schemas/USER"
+        400: 
+          description: Undefined error
+    post:
+      tags: [ "User" ]
+      requestBody: 
+        description: User object
+        required: true
+        content:
+          "application/json":
+            schema:
+              $ref: "#/components/schemas/USER"
+            example: 
+             {
+                "name": "John Doe",
+                "login": "jd" ,
+                "email" : "j.d@some.where"
+              }
+      responses:
+        200:
+          description: User created
+  /user/{UID}:
+    summary: Get or create single user
+    get:
+      tags: [ "User" ]
+      responses:
+        200:
+          description: User object
+          content:
+            "application/json" :
+              schema:
+                $ref: "#/components/schemas/USER"
+              example: 
+                id : 1 
+                login: some.where@over.the.ocean 
+                name: Mr. Some Where
+                email: some.where@over.the.ocean
+              
+    delete:
+      tags: [ "User" ]
+      responses:
+        200: 
+          description: Delete user
+          content:
+            "application/json" :
+              schema:
+                $ref: "#/components/schemas/USER"
+              example: 
+                id : 1 
+                login: some.where@over.the.ocean 
+                name: Mr. Some Where
+                email: some.where@over.the.ocean
+        404:
+          description: User not found
+    parameters: [
+        {
+          name: "UID" ,
+          in: path ,
+          required: true ,
+          schema: {
+            $ref: "#/components/schemas/ID"
+          }
+        }
+      ]
+        
+          
+  '/user/{UID}/rights':
+    summary: rights for user
+    get:
+      tags: [ "User"  , "Authorization"]
+      responses:
+        200:
+          description: rights for user
+          content:
+            "application/json" :
+              schema:
+                $ref: "#/components/schemas/RIGHTS"
+              example: 
+                id : 1 
+                login: some.where@over.the.ocean
+                groups: 
+                  - seq-core
+                rights:
+                  - data_id : prj1
+                    data_type: Project
+                    owner: false
+                    share: true
+                    read: true
+                    write: true
+                    
+        400: 
+          description: Undefined error
+    parameters : [
+        { name: UID ,
+          in: path ,
+          required: true ,
+          schema: {
+             $ref: "#/components/schemas/ID"
+          }
+        }
+      ]
+  '/user/{UID}/password':
+    summary: set user password
+    put:
+      tags: [ "User"  , "Authentication"]
+      requestBody:
+        description: password object 
+        required: true
+        content:
+          "application/json" :
+            schema:
+                type: object
+                properties:
+                  login:
+                    type: string
+                  token: 
+                    type: string
+                  password:
+                    type: string
+                  
+            example: 
+                login: user-id-1
+                token: abc-def-123
+                password: my-new-safe-password
+      responses:
+        200:
+          description: success
+        400: 
+          description: Undefined error
+    parameters : 
+        - name: UID 
+          in: path 
+          required: true 
+          schema: 
+            $ref: "#/components/schemas/ID"
+          
+        
+      
+  '/user/{UID}/password/recover':
+    summary: set user password
+    put:
+      tags: [ "User"  , "Authentication"]
+      responses:
+        200:
+          description: sending token to user email address
+        400: 
+          description: Undefined error
+    parameters : 
+        - name: UID 
+          description: User ID or login 
+          in: path 
+          required: true 
+          schema: 
+            $ref: "#/components/schemas/ID"
+          
+        
+    
+  '/project/':
+    summary: list of projects for user
+    get:
+      tags : [ "Project"]
+      responses:
+        200:
+          description: paginated list of projects
+        400: 
+          description: Undefined error
+  '/project/{PID}':
+    summary: project object
+    get:
+      tags : [ "Project"]
+      responses:
+        200:
+          description: success
+        400: 
+          description: Undefined error
+    parameters : 
+        - name: PID
+          description: project ID
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/PID"
+        
+  '/project/{PID}/file':
+    summary: list of all data products for project
+    get:
+      tags : [ "Project"]
+      responses:
+        200:
+          description: success
+        400: 
+          description: Undefined error
+    parameters : 
+        - name: PID
+          description: project ID
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/PID"
+  '/project/{PID}/file/{FID}':
+    summary: file info
+    get:
+      tags : [ "Project"]
+      responses:
+        200:
+          description: file object
+          content:
+            "application/json" :
+              schema:
+                $ref: "#/components/schemas/file"
+              example: {
+                id : 1 ,
+                project: my-cool-project ,
+                name: sample1.fastq ,
+                sample: BaseCalls ,
+                created: 2019-04-01T12:29:25.313-05:00 ,
+                MD5: 3e13a50346206ee4efc3ee5911e3c2ca ,
+                size: none ,
+                access: {
+                  me@c.me: {
+                    read: 1 ,
+                    share: 1 ,
+                    owner: 1
+                  }
+                }
+              } 
+        400: 
+          description: Undefined error
+    parameters : 
+        - name: PID
+          description: project ID
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ID"
+        - name: FID
+          description: file ID
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ID"    
+       
+  # '/project/{PID}/process':
+  #   summary: execute workflow 
+  #   get:
+  #     tags : [ "Project"]
+  #     responses:
+  #       200:
+  #         description: list of executed workflows 
+  #       400: 
+  #         description: Undefined error
+  #   post:
+  #     tags : [ "Project"]
+  #     responses:
+  #       200:
+  #         description: execute cwl workflow , returns job id
+  #       400: 
+  #         description: Undefined error
+  #   parameters : [
+  #       { 
+  #         $ref: "#/components/schemas/PID"
+  #       }
+  #     ]
+  # '/project/{PID}/process/{JID}':
+  #   summary: execute workflow 
+  #   get:
+  #     tags : [ "Project"]
+  #     responses:
+  #       200:
+  #         description: execute cwl workflow, returns job id
+  #       400: 
+  #         description: Undefined error
+  #   parameters : [
+  #       { 
+  #         name: PID ,
+  #         in: path ,
+  #         schema: {
+  #           type: string
+  #         }
+  #       },
+  #       { 
+  #         name: JID,
+  #         in: path ,
+  #         schema: {
+  #           type: string
+  #         }
+  #       }
+  #   ]          
+  # # '/run/':
+  # #   $ref: run.yaml
