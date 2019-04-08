@@ -5,10 +5,18 @@ from pprint import pprint
 import requests
 import unittest
 
+from googleapiclient.discovery import build
+
+
 logger = logging.getLogger(__name__)
 
-class GoogleAnalytics:
 
+class GoogleAnalytics:
+    """ 
+    Send tracking information to Google Analytics (GA_URL). If enabled is FALSE no information will be send. The user name will be encoded and send as ID. 
+
+    GA_URL = 'https://www.google-analytics.com/collect'
+    """
     # Environment variables are defined in app.yaml.
     GA_TRACKING_ID = 'UA-131728043-1'
     GA_URL = 'https://www.google-analytics.com/collect'
@@ -34,12 +42,12 @@ class GoogleAnalytics:
             self.host = headers.get('Host')
             self.language = headers.get('Accept-Language')    
              
-        
+
                 
                     
     # [START track_event]
     def track_event(self, category, action, label=None, value=0 , dataSource="API" , ):
-
+        """ Post event, category and label to GA """
         if not self.enabled :
             return 0
 
@@ -65,6 +73,7 @@ class GoogleAnalytics:
         # return response.raise_for_status()
 
     def track_pageview(self, resource, user=None, label=None, value=0 , dataSource="API"):
+        """ Track user and resource """
         if not self.enabled :
             return 0
 
@@ -99,7 +108,7 @@ class GoogleAnalytics:
     
 
     def post(self,data) :
-
+        """ Post data dictionary to self.GA_URL, used by track* methods."""
         
         headers = requests.utils.default_headers()
         headers.update(
@@ -112,6 +121,7 @@ class GoogleAnalytics:
         return (response , response.raise_for_status() )   
 
 def anonymize_user(user) :
+    """ Return sha256 encoded user name """
     sha = hashlib.sha256()
     sha.update(  str.encode(user) )
     return sha.hexdigest()
@@ -144,7 +154,7 @@ class TestGA(unittest.TestCase):
             del(ga)    
 
     def test_ga_tracking_id(self):
-        # test assing id
+        # test accessing id
         tid="ABC"
         ga = GoogleAnalytics(GA_TRACKING_ID=tid)
         self.assertEqual(tid , ga.tracking_id)
