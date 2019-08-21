@@ -7,6 +7,8 @@ services:
     depends_on: 
       - shock-ui
       - shock-api
+      - auth-db
+
     ports:
       - 8040:8080
       - 8041:80
@@ -15,10 +17,10 @@ services:
       - ${PWD}/dev/nginx/:/usr/share/nginx/html/
 
   shock-ui:
-    image: mgrast/shock-browser:latest
+    image: mgrast/shock-browser:demo 
     depends_on:
       - shock-api
-      - auth
+      - auth-server
     volumes:
       - ${PWD}/dev/config/shock-browser-config.js:/usr/share/nginx/html/js/config.js 
 
@@ -42,17 +44,22 @@ services:
       - auth-db:db  
 
   auth-db:
-    image: mysql:5
+    image: mysql:5.7
+    command: ['--explicit_defaults_for_timestamp', '--init-file', '/tmp/auth-db.mysql']
     environment:
       MYSQL_ROOT_PASSWORD: secret
       MYSQL_DATABASE: AuthAppUsers
       MYSQL_USER: authService
       MYSQL_PASSWORD: authServicePassword
+#      MYSQL_HOST: localhost
     volumes:
       - auth-db:/var/lib/mysql
+      - ./dev/config/setup-auth-db.sh:/usr/local/bin/setup-auth-db.sh
+      - ./dev/config/auth-db.mysql:/tmp/auth-db.mysql
+#    command: /usr/local/bin/setup-auth-db.sh 
 
-  auth:
-    image: mgrast/authserver:seqcenter
+  auth-server:
+    image: mgrast/authserver:develop
     depends_on:
       - auth-db
     environment:
@@ -63,12 +70,9 @@ services:
     ports:
       - 8042:80   
     volumes:
-      - ./dev/config/setup-auth-db.sh:/usr/local/bin/setup-auth-db.sh
       - ./dev/config/auth-server-httpd.conf:/usr/local/apache2/conf/httpd.conf:ro
       - ./../Skyport2/Config/authServer/cgi/:/usr/local/apache2/htdocs/cgi-bin/  
-      - ./dev/config/auth-db.mysql:/tmp/auth-db.mysql
       - ./dev/config/OAuthConfig.pm:/usr/local/apache2/htdocs/cgi-bin/OAuthConfig.pm
-    command: /usr/local/bin/setup-auth-db.sh 
 
   # auth-api:
   #   image: mgrast/authserver:demo
@@ -88,7 +92,7 @@ services:
   sequence-center-ui:
     image: mgrast/seqcenter:latest
     depends_on: 
-      - auth
+      - auth-server
     volumes:
       - ./dev/config/sequence-center.conf:/usr/local/apache2/conf/httpd.conf  
 
@@ -96,7 +100,7 @@ services:
   sequence-center-api:
     image: mgrast/seqcenter:latest
     depends_on:
-      - auth
+      - auth-server
 
 volumes:
   auth-db:
