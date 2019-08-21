@@ -21,7 +21,7 @@ RUN apt-get install -y \
   libdigest-md5-perl \
   libdigest-md5-file-perl \
   libdatetime-perl \
-  libdatetime-format-ISO8601-perl \
+#  libdatetime-format-ISO8601-perl \
   liblist-allutils-perl \
   libposix-strptime-perl \
   libuuid-tiny-perl \
@@ -37,7 +37,7 @@ ENV PERL_MM_USE_DEFAULT 1
 
 COPY . /usr/local/apache2/htdocs/SequenceCenter/
 # Deploy shock.cgi - maintain backwards compatibility
-RUN cp  /usr/local/apache2/htdocs/SequenceCenter/cgi-bin/shock.cgi /usr/local/apache2/htdocs/SequenceCenter/authServer/cgi-bin/
+RUN mkdir -p /usr/local/apache2/htdocs/SequenceCenter/authServer/cgi-bin/ && cp  /usr/local/apache2/htdocs/SequenceCenter/cgi-bin/shock.cgi /usr/local/apache2/htdocs/SequenceCenter/authServer/cgi-bin/
 # done - maintain backwards compatibility 
 RUN ( cd /usr/local/apache2/htdocs ; ln -s SequenceCenter/authServer . )
 
